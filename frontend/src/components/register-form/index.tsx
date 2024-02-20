@@ -1,5 +1,6 @@
 'use client';
 import React, { RefObject, useRef, useState } from 'react';
+//import toast, { Toaster } from "react-hot-toast";
 
 import { useRouter } from 'next/router';
 import { FieldValues, SubmitErrorHandler, useForm } from 'react-hook-form';
@@ -41,6 +42,8 @@ import { countries } from '@/utils/countries';
 import { useDebounce } from '@/hooks/useDebounce';
 import { communityAbi } from '../../../abis';
 import { communityAddr } from '@/utils/constants';
+import { parseEther, parseGwei } from "viem";
+import { getNetwork, readContract, watchNetwork, writeContract  } from "@wagmi/core";
 
 const RegisterForm = ({
   isOpen,
@@ -52,12 +55,7 @@ const RegisterForm = ({
   //const auth = useAuth()
   const { address } = useAccount();
 
-  const toast = useToast({
-    duration: 3000,
-    position: 'top',
-    status: 'success',
-    title: 'Sign up was successful',
-  });
+  const toast = useToast({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const swiperRef = useRef<SwiperRef>();
@@ -69,7 +67,8 @@ const RegisterForm = ({
   const [amount, setAmount] = useState('0.01');
   const debouncedAmount = useDebounce<string>(amount, 500);
   const [hasError, setHasError] = useState(false);
-  // form validation rules
+  const [inTx, setInTx] = useState(false);
+    // form validation rules
   const validationSchema = Yup.object().shape({
     fullName: Yup.string().required('Field is required'),
     sex: Yup.string().required('Field is required'),
@@ -94,25 +93,51 @@ const RegisterForm = ({
   const { errors, isValid, isSubmitSuccessful } = formState;
   const [cid, setCid] = useState<string>('');
 
-  const { config } = usePrepareContractWrite({
-    //@ts-ignore
-    address: communityAddr,
-    abi: communityAbi,
-    functionName: 'registerUser',
-    args: [cid, allTokensData.userNftUri],
-    //@ts-ignore
-    value: ethers.utils.parseEther(debouncedAmount || '0'),
-  });
+  const registerUserTx = async () => {
+    try {
+      setInTx(true);
+      const { hash } = await writeContract({
+        address: communityAddr,
+        abi: communityAbi,
+        functionName: "registerUser",
+        args: [cid, allTokensData.userNftUri],
+        value:  parseEther(debouncedAmount || '0'),
+      });
 
-  const { write: registerUser, data } = useContractWrite(config);
+      //toast.success("Registration Successful on Avalanche");
 
-  const { isLoading } = useWaitForTransaction({
-    hash: data?.hash,
-    onSuccess(tx) {
-      console.log(tx);
-      router.push('/member/dashboard');
-    },
-  });
+      setInTx(false);
+      router.push('/member/dashboard')
+    }catch (error) {
+      toast({
+        duration: 3000,
+        position: 'top',
+        status: 'error',
+        title: "You have signed up before",
+      })
+      console.log(error);
+    }
+  }
+
+  // const { config } = usePrepareContractWrite({
+  //   //@ts-ignore
+  //   address: communityAddr,
+  //   abi: communityAbi,
+  //   functionName: 'registerUser',
+  //   args: [cid, allTokensData.userNftUri],
+  //   //@ts-ignore
+  //   value: ethers.utils.parseEther(debouncedAmount || '0'),
+  // });
+
+  // const { write: registerUser, data } = useContractWrite(config);
+
+  // const { isLoading } = useWaitForTransaction({
+  //   hash: data?.hash,
+  //   onSuccess(tx) {
+  //     console.log(tx);
+  //     router.push('/member/dashboard');
+  //   },
+  // });
 
   const onInvalidSubmit: SubmitErrorHandler<FieldValues> = (errors: any) => {
     if (!isValid) {
@@ -159,9 +184,10 @@ const RegisterForm = ({
           name: data.fullName,
         });
 
-        registerUser?.();
+        //registerUser?.();
+        registerUserTx();
 
-        toast();
+        //toast();
         reset();
         setIsSubmitting(false);
       }
