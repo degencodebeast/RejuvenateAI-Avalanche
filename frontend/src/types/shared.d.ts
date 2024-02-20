@@ -11,11 +11,11 @@ export type Article = {
   updatedAt?: string | Date;
   views?: number;
   author: {
+    name: ReactNode;
     id: number;
     fullName?: string;
     username: string;
     address: string;
-   
     avatar?: string;
   };
 };

@@ -9,18 +9,22 @@ import { useState } from "react"
 
  const ArticleView =()=>{
     const [article,setArticle]=useState<Article>( {
-        id: "1",
+        id: 1,
         slug: "sample-article",
         title: "Sample Article Title",
         content: "This is the content of the sample article. It can include a lot of information and details.",
         image: "",
+        authorId: 1,
         status: "published",
         intro: "A brief introduction to the sample article.",
         createdAt: new Date(),
         updatedAt: new Date(),
         author: {
             name: "John Doe",
-            avatar: "author-avatar-url.jpg"
+            avatar: "author-avatar-url.jpg",
+            id: 1,
+            username: "",
+            address: ""
         }
     })
 return(
@@ -36,7 +40,7 @@ return(
     <Avatar size={'sm'} src={article?.author?.avatar} />
     <HStack divider={<DotDivider/>}>
 
-     <Text as={'strong'} fontSize={'large'}>{article?.author?.name}</Text> <Text as={'time'} fontWeight={'medium'} fontSize={'sm'} color={'gray.500'} >{format(article?.createdAt,'MMM dd, yyyy')}</Text>
+     <Text as={'strong'} fontSize={'large'}>{article?.author?.name}</Text> <Text as={'time'} fontWeight={'medium'} fontSize={'sm'} color={'gray.500'} >{format(new Date(article?.createdAt),'MMM dd, yyyy')}</Text>
     </HStack>
 </HStack>
 <Stack spacing={4} mb={6}>
