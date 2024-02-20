@@ -3,7 +3,7 @@
 // import {abi as nutritionistNftAbi} from "./NutritionistNFT.json";
 // import {abi as userNftAbi} from "./UserNFT.json";
 
-export const communityAbi = [
+export const communityAbi =  [
   {
     "inputs": [
       {
@@ -104,6 +104,70 @@ export const communityAbi = [
       }
     ],
     "name": "ApplicationApproved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "BurnNutritionistNFT",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "BurnUserNFT",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "nutritionist",
+        "type": "address"
+      }
+    ],
+    "name": "MintNutritionistNFT",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      }
+    ],
+    "name": "MintUserNFT",
     "type": "event"
   },
   {
