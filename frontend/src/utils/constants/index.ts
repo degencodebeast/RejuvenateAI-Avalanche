@@ -1,2 +1,2 @@
 export const appName = 'REJUVENATE_AI';
-export const communityAddr = "0x3A3bc7C19bE0381294d8E7Bd311C123b76b33982"
+export const communityAddr = "0x48DF3348bb3810c4eec755152fA3a9c68897f0F2"
