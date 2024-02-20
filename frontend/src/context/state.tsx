@@ -1,5 +1,5 @@
 'use client';
-//eslint#disabling-rules
+
 import { createContext, useContext, useState } from 'react';
 import { Community, User, stateContextType } from '../types/state';
 import { useAccount, useNetwork, useWalletClient, useEnsName } from 'wagmi';
