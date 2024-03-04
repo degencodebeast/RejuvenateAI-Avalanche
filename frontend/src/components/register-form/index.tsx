@@ -38,11 +38,10 @@ import SwiperMain from 'swiper';
 import Icon from '../Icon';
 import NutritionistForm from '../nutritionist-form';
 import { countries } from '@/utils/countries';
-// import { putJSONandGetHash } from '@/helpers';
 import { useDebounce } from '@/hooks/useDebounce';
 import { communityAbi } from '../../../abis';
 import { communityAddr } from '@/utils/constants';
-
+import { useStorageUpload } from '@thirdweb-dev/react';
 import { useAddUserMutation } from '@/state/services';
 import { generateUsername } from '@/utils';
 
@@ -108,8 +107,9 @@ const RegisterForm = ({
 
   // get functions to build form with useForm() hook
   const { errors, isValid, isSubmitSuccessful } = formState;
-  const [cid, setCid] = useState<string>('');
+  const [cid, setCid] = useState<any>('');
   //const [isLoading, setIsLoading] = useState(false);
+  const { mutateAsync: upload } = useStorageUpload();
 
   const registerUserTx = async () => {
     try {
@@ -167,6 +167,7 @@ const RegisterForm = ({
 
   const onValidSubmit = async (data: any) => {
     //data.preventDefault();
+   
     try {
       if (isSubmitSuccessful) {
         // setIsLoading(true);
@@ -175,7 +176,6 @@ const RegisterForm = ({
         console.log({ data });
       }
 
-      //    const cid = await uploadPromptToIpfs(data);
       if (isValid) {
         setIsSubmitting(true);
         // Serialize the form data into a JSON object
@@ -196,13 +196,15 @@ const RegisterForm = ({
           smokingLength: data.smokingLength,
         };
 
-        // const cid = await putJSONandGetHash(formDataObject);
-
-        // setCid(cid);
+        const dataToUpload = [formDataObject];
+        const cid = await upload({ data: dataToUpload });
+        console.log("The index of 0 in the cid array: ", cid[0])
+        
+        setCid(cid[0]);
         setUser({
           ...user,
           userAddress: address,
-          userCidData: cid,
+          userCidData: cid[0],
           name: data.fullName,
         });
 
@@ -222,11 +224,12 @@ const RegisterForm = ({
         setIsSubmitting(false);
       }
     } catch (error) {
+      console.log('error:', error);
       setIsSubmitting(false);
       toast({
         status: 'error',
         title: 'An error occured, please try again...',
-        description: 'Make sure you have a gas fee',
+        description: 'Make sure you have gas fee',
       });
     }
   };
