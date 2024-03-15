@@ -29,6 +29,7 @@ import {
   Select,
   useToast,
   Text,
+  Spinner,
 } from '@chakra-ui/react';
 import { NewUserType, RegisterType } from '../new-user-type';
 //import { useAuth } from "near-social-bridge";
@@ -37,10 +38,20 @@ import SwiperMain from 'swiper';
 import Icon from '../Icon';
 import NutritionistForm from '../nutritionist-form';
 import { countries } from '@/utils/countries';
-// import { putJSONandGetHash } from '@/helpers';
 import { useDebounce } from '@/hooks/useDebounce';
 import { communityAbi } from '../../../abis';
 import { communityAddr } from '@/utils/constants';
+import { useStorageUpload } from '@thirdweb-dev/react';
+import { useAddUserMutation } from '@/state/services';
+import { generateUsername } from '@/utils';
+
+import { parseEther, parseGwei } from 'viem';
+import {
+  getNetwork,
+  readContract,
+  watchNetwork,
+  writeContract,
+} from '@wagmi/core';
 
 const RegisterForm = ({
   isOpen,
@@ -49,14 +60,17 @@ const RegisterForm = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  //const auth = useAuth()
+  const [
+    createUser,
+    { data: createdUser, isLoading: isCreatingUser, isSuccess },
+  ] = useAddUserMutation();
   const { address } = useAccount();
 
   const toast = useToast({
-    duration: 3000,
-    position: 'top',
-    status: 'success',
-    title: 'Sign up was successful',
+    // duration: 3000,
+    // position: 'top',
+    // status: 'success',
+    // title: 'Sign up was successful',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -64,11 +78,12 @@ const RegisterForm = ({
   const swiperNestedRef = useRef<SwiperRef>();
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [SelectedUserType, setSelectedUserType] =
-    useState<RegisterType>('individual');
+    useState<RegisterType>('member');
   const { user, setUser, allTokensData } = useAppContext();
   const [amount, setAmount] = useState('0.01');
   const debouncedAmount = useDebounce<string>(amount, 500);
   const [hasError, setHasError] = useState(false);
+  const [inTx, setInTx] = useState(false);
   // form validation rules
   const validationSchema = Yup.object().shape({
     fullName: Yup.string().required('Field is required'),
@@ -92,27 +107,55 @@ const RegisterForm = ({
 
   // get functions to build form with useForm() hook
   const { errors, isValid, isSubmitSuccessful } = formState;
-  const [cid, setCid] = useState<string>('');
+  const [cid, setCid] = useState<any>('');
+  //const [isLoading, setIsLoading] = useState(false);
+  const { mutateAsync: upload } = useStorageUpload();
 
-  const { config } = usePrepareContractWrite({
-    //@ts-ignore
-    address: communityAddr,
-    abi: communityAbi,
-    functionName: 'registerUser',
-    args: [cid, allTokensData.userNftUri],
-    //@ts-ignore
-    value: ethers.utils.parseEther(debouncedAmount || '0'),
-  });
+  const registerUserTx = async () => {
+    try {
+      setInTx(true);
+      const { hash } = await writeContract({
+        address: communityAddr,
+        abi: communityAbi,
+        functionName: 'registerUser',
+        args: [cid, allTokensData.userNftUri],
+        value: parseEther(debouncedAmount || '0'),
+      });
 
-  const { write: registerUser, data } = useContractWrite(config);
+      //toast.success("Registration Successful on Avalanche");
 
-  const { isLoading } = useWaitForTransaction({
-    hash: data?.hash,
-    onSuccess(tx) {
-      console.log(tx);
+      setInTx(false);
       router.push('/member/dashboard');
-    },
-  });
+    } catch (error) {
+      toast({
+        duration: 3000,
+        position: 'top',
+        status: 'error',
+        title: 'You have signed up before',
+      });
+      console.log(error);
+    }
+  };
+
+  // const { config } = usePrepareContractWrite({
+  //   //@ts-ignore
+  //   address: communityAddr,
+  //   abi: communityAbi,
+  //   functionName: 'registerUser',
+  //   args: [cid, allTokensData.userNftUri],
+  //   //@ts-ignore
+  //   value: ethers.utils.parseEther(debouncedAmount || '0'),
+  // });
+
+  // const { write: registerUser, data } = useContractWrite(config);
+
+  // const { isLoading } = useWaitForTransaction({
+  //   hash: data?.hash,
+  //   onSuccess(tx) {
+  //     console.log(tx);
+  //     router.push('/member/dashboard');
+  //   },
+  // });
 
   const onInvalidSubmit: SubmitErrorHandler<FieldValues> = (errors: any) => {
     if (!isValid) {
@@ -123,12 +166,16 @@ const RegisterForm = ({
   };
 
   const onValidSubmit = async (data: any) => {
+    //data.preventDefault();
+   
     try {
       if (isSubmitSuccessful) {
+        // setIsLoading(true);
+
+        // setIsLoading(false);
         console.log({ data });
       }
 
-      //    const cid = await uploadPromptToIpfs(data);
       if (isValid) {
         setIsSubmitting(true);
         // Serialize the form data into a JSON object
@@ -149,28 +196,40 @@ const RegisterForm = ({
           smokingLength: data.smokingLength,
         };
 
-        // const cid = await putJSONandGetHash(formDataObject);
-
-        // setCid(cid);
+        const dataToUpload = [formDataObject];
+        const cid = await upload({ data: dataToUpload });
+        console.log("The index of 0 in the cid array: ", cid[0])
+        
+        setCid(cid[0]);
         setUser({
           ...user,
           userAddress: address,
-          userCidData: cid,
+          userCidData: cid[0],
           name: data.fullName,
         });
 
-        registerUser?.();
+        await createUser({
+          username: generateUsername(),
+          fullName: data?.fullName,
+          address: address as `0x${string}`,
+          userType: SelectedUserType,
+        }).unwrap();
 
-        toast();
+        await registerUserTx();
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+
+        //toast();
+
         reset();
         setIsSubmitting(false);
       }
     } catch (error) {
+      console.log('error:', error);
       setIsSubmitting(false);
       toast({
         status: 'error',
         title: 'An error occured, please try again...',
-        description: 'Make sure you have a gas fee',
+        description: 'Make sure you have gas fee',
       });
     }
   };
@@ -264,7 +323,7 @@ const RegisterForm = ({
                 />
               </SwiperSlide>
               <SwiperSlide>
-                {SelectedUserType == 'individual' && (
+                {SelectedUserType == 'member' && (
                   <form onSubmit={handleSubmit(onValidSubmit, onInvalidSubmit)}>
                     <Swiper
                       nested
@@ -555,7 +614,7 @@ const RegisterForm = ({
                               defaultValue=''
                             >
                               <option value='' disabled>
-                                How mamy hours of sleep do you get per day?
+                                How many hours of sleep do you get per day?
                               </option>
                               {Array.from({ length: 13 }, (_, item) => (
                                 <option
@@ -606,6 +665,7 @@ const RegisterForm = ({
                           <Button type='submit' isLoading={isSubmitting}>
                             Complete Sign Up
                           </Button>
+                          {isSubmitting && <Spinner />}
                         </HStack>
                       </SwiperSlide>
                     </Swiper>

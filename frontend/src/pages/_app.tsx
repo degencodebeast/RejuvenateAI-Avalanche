@@ -11,10 +11,29 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { arbitrumGoerli, avalancheFuji } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { useEffect, useState } from 'react';
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc';
+import { shido } from '@/utils/constants';
+import { HuddleClient, HuddleProvider } from '@huddle01/react';
+
+const huddleClient = new HuddleClient({
+  projectId: 'zMQHa6hH5hGrxfwYZp7z8I-1lWScI7UA',
+  options: {
+    activeSpeakers: {
+      size: 8,
+    },
+  },
+});
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [avalancheFuji],
-  [publicProvider()]
+  [shido],
+  [
+    jsonRpcProvider({
+      rpc: (chain) => ({
+        http: `https://rpc-testnet-nodes.shidoscan.com`,
+      }),
+    }),
+    //publicProvider()
+  ]
 );
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string;
@@ -28,7 +47,7 @@ const poppins = Poppins({
 });
 
 const { connectors } = getDefaultWallets({
-  appName: 'RejuvenateAI',
+  appName: 'RevitalizeAI',
   projectId: projectId,
   chains,
 });
@@ -45,12 +64,14 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>RejuvenateAI</title>
+        <title>RevitalizeAI</title>
       </Head>
       <WagmiConfig config={config}>
         <RainbowKitProvider chains={chains} modalSize='compact'>
           <Providers>
-            <Component {...pageProps} className={poppins.className} />
+            <HuddleProvider client={huddleClient}>
+              <Component {...pageProps} className={poppins.className} />
+            </HuddleProvider>
           </Providers>
         </RainbowKitProvider>
       </WagmiConfig>

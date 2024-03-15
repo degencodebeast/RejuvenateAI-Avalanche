@@ -2,26 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@chakra-ui/next-js';
-import RejuvenateAi from '../../images/svg/rejuvenate-logo.svg';
+
 import { useAppContext } from '@/context/state';
 import RegisterForm from '../register-form';
-import { useAccount, useEnsName, useEnsAvatar} from 'wagmi';
+import { useAccount, useEnsName, useEnsAvatar } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { Button, HStack, Text, useDisclosure } from '@chakra-ui/react';
+import { Button, HStack, Image, Text, useDisclosure } from '@chakra-ui/react';
 import LogoutButton from '../LogoutButton';
 
 const Header = ({ bg = 'transparent' }: { bg?: string }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-
-  const { setAddress, setEnsName,user } = useAppContext();
+  const { setAddress, setEnsName, user } = useAppContext();
 
   const { address } = useAccount();
   const { isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
-  
+
   // const { data: ensName } = useEnsName({
   //   address: address,
+
   //   chainId: 421613,
   // });
 
@@ -35,7 +35,7 @@ const Header = ({ bg = 'transparent' }: { bg?: string }) => {
     //setEnsName(ensName);
   }, [address, setAddress]);
 
-  const isLoggedin=()=>( user && user?.userAddress!=='');
+  const isLoggedin = () => user && user?.userAddress !== '';
   return (
     <>
       <header
@@ -43,7 +43,7 @@ const Header = ({ bg = 'transparent' }: { bg?: string }) => {
       >
         <div>
           <Link href={'/'} textDecor={'none'}>
-            <RejuvenateAi />
+            <Image alt='Logo' src='/images/svg/app-logo.svg' />
           </Link>
         </div>
         <HStack spacing={4}>
@@ -58,7 +58,7 @@ const Header = ({ bg = 'transparent' }: { bg?: string }) => {
           </Text>
         </HStack>
         {/* {isLoggedin() && <LogoutButton/>} */}
-        {(address && !isLoggedin()) && (
+        {address && !isLoggedin() && (
           <HStack spacing={4}>
             <Button
               colorScheme='primaryColor'
